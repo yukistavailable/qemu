@@ -1,0 +1,2 @@
+__sync_val_compare_and_swap(*p, old, new) => if (*p == old) {*p = new and return new} .
+By using __sync_val_compare_and_swap, it is possible to assign  header to v and increase header atomically.

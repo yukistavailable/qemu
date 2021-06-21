@@ -1,0 +1,1 @@
+By using DMA, CPU can be used for other tasks.

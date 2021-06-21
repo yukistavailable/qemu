@@ -45,6 +45,8 @@ void apple_support() {
   }
 }
 
+int head = 0;
+int tail = 0;
 void ap_sum(void *_sum) {
   UINTN pid;
   EFI_STATUS status = MP->WhoAmI(MP, &pid);
@@ -52,7 +54,10 @@ void ap_sum(void *_sum) {
 
   int * const sum = _sum;
 
-  // Ticket Lock Here
+  int v = __sync_val_compare_and_swap(&head, head, head + 1);
+  while (1) {
+	  if (tail == v) break;
+  }
 
   // Critical Section (Do not touch!)
   for (int i = 0; i < 0x10000; i++) {
@@ -60,6 +65,7 @@ void ap_sum(void *_sum) {
   }
 
   // Unlock Here
+  __sync_fetch_and_add(&tail, 1);
 
   return;
 }
