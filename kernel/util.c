@@ -966,7 +966,7 @@ int fonts[128][8] = {
 static struct HardwareInfo my_hardware_info;
 static unsigned int fb_y;
 static unsigned int fb_x;
-static int base;
+// static int base;
 
 void init_frame_buffer(struct HardwareInfo *_hardware_info) {
 	my_hardware_info = *_hardware_info;
@@ -1043,6 +1043,7 @@ void puth(unsigned long long value, unsigned char digits_len) {
 		else if (result[j] == 5) putc('5');
 		else if (result[j] == 6) putc('6');
 		else if (result[j] == 7) putc('7');
+		else if (result[j] == 8) putc('8');
 		else if (result[j] == 9) putc('9');
 		else if (result[j] == 10) putc('a');
 		else if (result[j] == 11) putc('b');
@@ -1051,4 +1052,13 @@ void puth(unsigned long long value, unsigned char digits_len) {
 		else if (result[j] == 14) putc('e');
 		else if (result[j] == 15) putc('f');
 	}
+}
+
+int compare_str(char *a, char *b, int length) {
+	for (int i = 0; i < length; i++) {
+		if (*a != *b) return 0;
+		a++;
+		b++;
+	}
+	return 1;
 }

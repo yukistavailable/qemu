@@ -4,8 +4,12 @@
 #include "interrupt.h"
 #include "memory.h"
 #include "util.h"
+#include "pm_timer.h"
+#include "pm_timer.h"
+#include "lapic_timer.h"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter" // For l6 (kernel_param_dummy)
+void schedule(unsigned long long sp);
 
 void start(void *SystemTable __attribute__ ((unused)), struct HardwareInfo *_hardware_info, unsigned long long kernel_param_dummy) {
   // From here - Put this part at the top of start() function
@@ -14,45 +18,22 @@ void start(void *SystemTable __attribute__ ((unused)), struct HardwareInfo *_har
   hardware_info = *_hardware_info;
   init_segmentation();
   init_virtual_memory();
+  init_frame_buffer(_hardware_info);
   init_intr();
   // To here - Put this part at the top of start() function
 
-  // Delete me. I'm a sample code.
-  //for (unsigned int i = 0; i < hardware_info.fb.height; i++) {
-    //for (unsigned int j = 0; j < hardware_info.fb.width; j++) {
-      //struct Pixel *pixel = my_hardware_info.fb.base + my_hardware_info.fb.width * i + j;
-      // † AYAME †
-      //pixel->r = 111;
-      //pixel->g = 51;
-      //pixel->b = 129;
-    //}
-  //}
-  init_frame_buffer(_hardware_info);
-  //puts("DEFGHI\nABC");
-  //puth(31, 4);
-  puth(kernel_param_dummy, 7);
-  int data[8] = {
-	0b01111100,
-	0b10010010,
-	0b10010010,
-	0b11111111,
-	0b00010010,
-	0b10010010,
-	0b01111100,
-	0b00010000
-  };
-  // To here - sample code
- //for (int k = 0; k < 8; k++) { 
-	 //for (int m = 0; m < 8; m++) {
-		 //if (((data[k] >> (8-m)) & 1) == 1) {
-			 //struct Pixel *pixel = hardware_info.fb.base + hardware_info.fb.width * (k) + m; 
-			 //pixel->r = 255;
-			 //pixel->g = 255;
-			 //pixel->b = 255;
-		 //}
-	 //}
-  //}
-
+  puts("start");
+  init_acpi_pm_timer(hardware_info.rsdp);
+  pm_timer_wait_millisec(1000);
+  // unsigned int fre = measure_lapic_freq_khz();
+  // puth(fre, 8);
+  puts("Set CallBack");
+  void * schedule_address;
+  asm volatile ("lea schedule(%%rip), %0" : "=r"(schedule_address));
+  puts("\nstart\n");
+  lapic_periodic_exec(1000, (void *) schedule_address);
+  puts("\nfinish\n");
+  // puth(kernel_param_dummy, 7);
   // Do not delete it!
   while (1);
 }
