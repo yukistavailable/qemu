@@ -1,6 +1,7 @@
 #include "interrupt.h"
 #include "lapic_timer.h"
 #include "util.h"
+#include "syscall.h"
 
 struct InterruptDescriptor {
   unsigned short offset_lo;
@@ -47,8 +48,9 @@ void init_intr() {
   unsigned long long lapic_intr_handler_addr;
   asm volatile ("lea lapic_intr_handler(%%rip), %0" : "=r"(lapic_intr_handler_addr));
 
-  void* syscall_handler_addr;
-  asm volatile ("lea syscall_handler(%%rip), %[handler]" : [handler]"=r"(syscall_handler_addr));
+  unsigned long long syscall_handler_addr;
+  // asm volatile ("lea syscall_handler(%%rip), %[handler]" : [handler]"=r"(syscall_handler_addr));
+  asm volatile ("lea syscall_handler(%%rip), %0" : "=r"(syscall_handler_addr));
 
   // Register Local APIC handler
   //
@@ -71,6 +73,14 @@ void init_intr() {
   idt->offset_mid = (lapic_intr_handler_addr >> 16) & 0xFFFF;
   idt->offset_lo = (lapic_intr_handler_addr) & 0xFFFF;
   idt->reserved = 1;
+
+  struct InterruptDescriptor *idt80 = &(IDT[128]);
+  idt80->segment = cs;
+  idt80->attribute = 0b1000111000000000;
+  idt80->offset_hi = (syscall_handler_addr >> 32) & 0xFFFFFFFF;
+  idt80->offset_mid = (syscall_handler_addr >> 16) & 0xFFFF;
+  idt80->offset_lo = (syscall_handler_addr) & 0xFFFF;
+  idt80->reserved = 1;
 
   // Register Sycall handler
   //

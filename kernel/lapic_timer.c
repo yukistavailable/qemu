@@ -76,9 +76,3 @@ void lapic_intr_handler_internal(unsigned long long sp) {
   reserved_callback(sp);
   *lapic_eoi = 0;
 }
-
-// void lapic_intr_handler_internal() {
-//   // Set End of Interrupt
-//   // reserved_callback();
-//   *lapic_eoi = 0;
-// }

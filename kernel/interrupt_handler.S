@@ -20,19 +20,17 @@ lapic_intr_handler:
 
 .global syscall_handler
 syscall_handler:
-  // Save Registers
-  //
-  // Here (9-A)
-  //
-
-  // Call syscall_handler_internal
-  //
-  // Here (9-A)
-  //
-
-  // Resume
-  //
-  // Here (9-A)
-  //
-
+  push %rbx
+  push %rcx
+  push %rdx
+  push %rdi
+  push %rsi
+  push %rbp
+  call syscall_handler_internal
+  pop %rbp
+  pop %rsi
+  pop %rdi
+  pop %rdx
+  pop %rcx
+  pop %rbx
   iretq

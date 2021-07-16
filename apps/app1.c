@@ -1,11 +1,28 @@
+// #include "syscall.h"
+// #include "util.h"
+
+// void puts(char * str);
+
 unsigned long long text_section_top = 0x104000000;
 
 void app1() {
   while (1) {
-    // char *str = "Hello from app1\r\n";
+    char *str = "Hello from app1\r\n";
 
     // TODO: Say hello from here by issuing `puts` syscall
-    // syscall_puts(str);
+    unsigned long long id;
+    id = 1;
+    unsigned long long syscall_ret;
+    asm volatile (
+      "movq %[id], %%rax\n"
+      "movq %[id], %%rdi\n"
+      "movq %[arg1], %%rsi\n"
+      "int $0x80\n"
+      "movq %%rax, %[ret]\n"
+      :[ret]"=r"(syscall_ret)
+      :[id]"g"(id),
+      [arg1]"m"((unsigned long long) str)
+    );
 
     volatile int i = 100000000;
     while (i--);
