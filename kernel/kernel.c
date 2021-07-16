@@ -50,16 +50,6 @@ void start(void *SystemTable __attribute__ ((unused)), struct HardwareInfo *_har
   sp2 = s2;
   unsigned long long syscall_ret;
   puts("\nSTART\n");
-  // while (1);
-  // asm volatile (
-  //   "movq %[id], %%rax\n"
-  //   "movq %[arg1], %%rdi\n"
-  //   "int $0x80\n"
-  //   "movq %%rax, %[ret]\n"
-  //   :[ret]"=r"(syscall_ret)
-  //   :[id]"g"((unsigned long long)0x1),
-  //   [arg1]"m"(s1_addr)
-  // );
   
   //9-A
   // asm volatile (
@@ -84,6 +74,7 @@ void start(void *SystemTable __attribute__ ((unused)), struct HardwareInfo *_har
   //   [arg1]"m"((unsigned long long) sp2)
   // );
 
+  //9-B
   void * schedule_address;
   asm volatile ("lea schedule(%%rip), %0" : "=r"(schedule_address));
   lapic_periodic_exec(1000, (void *) schedule_address);
