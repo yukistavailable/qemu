@@ -1,20 +1,26 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "util.h"
 #include "lapic_timer.h"
+#include "memory.h"
+
 volatile unsigned int *lapic_eoi2 = (unsigned int *)0xfee000b0;
+
 struct Task {
   unsigned long long sp;
+  unsigned long long cr3;
 };
+
 struct Task tasks[3];
 unsigned int current_task;
-unsigned long long rsp0 = 0x105000000;
-unsigned long long rip0 = 0x104000000;
-unsigned long long rip1 = 0x105000000;
-unsigned long long rsp1 = 0x106000000;
-unsigned long long rip2 = 0x106000000;
-unsigned long long rsp2 = 0x107000000;
+unsigned long long rsp0 = 0x41000000;
+unsigned long long rip0 = 0x40000000;
+unsigned long long rsp1 = 0x41000000;
+unsigned long long rip1 = 0x40000000;
+unsigned long long rsp2 = 0x41000000;
+unsigned long long rip2 = 0x40000000;
 
 void init_tasks() {
+    puts("\ninit tasks\n");
   current_task = 0;
   struct Task * task0 = &tasks[0];
   struct Task * task1 = &tasks[1];
@@ -31,6 +37,9 @@ void init_tasks() {
   unsigned short cs2;
   unsigned long long lss2;
   unsigned long long lcs2;
+  unsigned long long task0_cr3 = task_cr3s[0];
+  unsigned long long task1_cr3 = task_cr3s[1];
+  unsigned long long task2_cr3 = task_cr3s[2];
   asm volatile ("mov %%ss, %0":"=r"(ss1));
   asm volatile ("mov %%cs, %0":"=r"(cs1));
   asm volatile ("mov %%ss, %0":"=r"(ss2));
@@ -45,99 +54,125 @@ void init_tasks() {
     "mov %%rsp, %0\n"
     :"=r"(sp)
   );
+puts("\n");
+puts("register info");
+puts("\n");
+puth(kernel_cr3, 8);
+puts("\n");
+puth(task1_cr3, 8);
+puts("\n");
+puth(sp, 8);
+puts("\n");
+puth(rsp1, 8);
+puts("\n");
   asm volatile(
     "mov %[rsp1], %%rsp\n"
-    ::[rsp1]"m"(rsp1)
-  );
-  asm volatile(
+    "mov %[cr3], %%cr3\n"
     "push %[lss1]\n"
     "push %[rsp1]\n"
     "pushfq\n"
     "push %[lcs1]\n"
     "push %[rip1]\n"
-    ::[lss1]"g"(lss1), [rsp1]"g"(rsp1), [lcs1]"g"(lcs1), [rip1]"g"(rip1)
+    "mov %[sp], %%rsp\n"
+    "mov %[kcr3], %%cr3\n"
+    ::[rsp1]"m"(rsp1), 
+    [cr3]"r"(task1_cr3), 
+    [lss1]"g"(lss1), 
+    [lcs1]"g"(lcs1), 
+    [rip1]"g"(rip1),
+    [sp]"m"(sp),
+    [kcr3]"r"(kernel_cr3)
   );
-  arsp1 = rsp1 - 96;
-  // asm volatile (
-  //   "mov %%rsp, %[sp]\n"
-  //   "mov %[rsp1], %%rsp\n"
-  //   "mov %[ss1], %%rax\n"
-  //   "push %%rax\n"
-  //   "mov %[rsp1], %%rax\n"
-  //   "push %%rax\n"
-  //   "pushfq\n"
-  //   "mov %[cs1], %%rax\n"
-  //   "push %%rax\n"
-  //   "mov %[rip1], %%rax\n"
-  //   "push %%rax\n"
-  //   "push %%rax\n"
-  //   "push %%rbx\n"
-  //   "push %%rcx\n"
-  //   "push %%rdx\n"
-  //   "push %%rdi\n"
-  //   "push %%rsi\n"
-  //   "push %%rbp\n"
-  //   "mov %%rsp, %[arsp1]\n"
-  //   :[sp]"=r"(sp), [arsp1]"=r"(arsp1)
-  //   :[ss1]"g"((unsigned long long) ss1),
-  //   [rsp1]"m"(rsp1),
-  //   [cs1]"g"((unsigned long long) cs1),
-  //   [rip1]"m"(rip1)
-  // );
-  puts("\narp1\n");
-  puth(arsp1, 8);
-  puts("\ndiff\n");
-  puth(rsp1 - arsp1, 8);
-  // asm volatile (
-  //   "mov %[rsp2], %%rsp\n"
-  //   "mov %[ss2], %%rax\n"
-  //   "push %%rax\n"
-  //   "mov %[rsp2], %%rax\n"
-  //   "push %%rax\n"
-  //   "pushfq\n"
-  //   "mov %[cs2], %%rax\n"
-  //   "push %%rax\n"
-  //   "mov %[rip2], %%rax\n"
-  //   "push %%rax\n"
-  //   "push %%rax\n"
-  //   "push %%rbx\n"
-  //   "push %%rcx\n"
-  //   "push %%rdx\n"
-  //   "push %%rdi\n"
-  //   "push %%rsi\n"
-  //   "push %%rbp\n"
-  //   "mov %%rsp, %[arsp2]\n"
-  //   :[arsp2]"=r"(arsp2)
-  //   :[ss2]"g"((unsigned long long) ss2), 
-  //   [rsp2]"m"(rsp2),
-  //   [cs2]"g"((unsigned long long)cs2),
-  //   [rip2]"m"(rip2)
-  // );
+//   asm volatile(
+//     "mov %[cr3], %%cr3\n"
+//     ::[cr3]"a"(task1_cr3)
+//   );
+//   asm volatile(
+//     "push %[lss1]\n"
+//     "push %[rsp1]\n"
+//     "pushfq\n"
+//     "push %[lcs1]\n"
+//     "push %[rip1]\n"
+//     ::[lss1]"g"(lss1), [rsp1]"g"(rsp1), [lcs1]"g"(lcs1), [rip1]"g"(rip1)
+//   );
+//   asm volatile(
+//       "mov %0, %%rsp\n"
+//       "mov %1, %%cr3\n"
+//       ::"m"(sp),
+//         "a"(kernel_cr3));
+//   asm volatile(
+//     "mov %[rsp2], %%rsp\n"
+//     ::[rsp2]"m"(rsp2)
+//   );
+//   asm volatile(
+//     "mov %[cr3], %%cr3\n"
+//     ::[cr3]"a"(task2_cr3)
+//   );
+//   asm volatile(
+//     "push %[lss2]\n"
+//     "push %[rsp2]\n"
+//     "pushfq\n"
+//     "push %[lcs2]\n"
+//     "push %[rip2]\n"
+//     ::[lss2]"g"(lss2), [rsp2]"g"(rsp2), [lcs2]"g"(lcs2), [rip2]"g"(rip2)
+//   );
+//   asm volatile("mov %0, %%rsp"::"m"(sp));
+//   asm volatile(
+//     "mov %[cr3], %%cr3\n"
+//     ::[cr3]"a"(kernel_cr3)
+//   );
   asm volatile(
     "mov %[rsp2], %%rsp\n"
-    ::[rsp2]"m"(rsp2)
-  );
-  asm volatile(
+    "mov %[cr3], %%cr3\n"
     "push %[lss2]\n"
     "push %[rsp2]\n"
     "pushfq\n"
     "push %[lcs2]\n"
     "push %[rip2]\n"
-    ::[lss2]"g"(lss2), [rsp2]"g"(rsp2), [lcs2]"g"(lcs2), [rip2]"g"(rip2)
+    "mov %[sp], %%rsp\n"
+    "mov %[kernel_cr3], %%cr3\n"
+    ::[rsp2]"m"(rsp2), 
+    [cr3]"r"(task2_cr3), 
+    [lss2]"g"(lss2), 
+    [lcs2]"g"(lcs2), 
+    [rip2]"g"(rip2),
+    [sp]"m"(sp),
+    [kernel_cr3]"r"(kernel_cr3)
   );
+  arsp1 = rsp1 - 96;
   arsp2 = rsp2 - 96;
   puts("\narp2\n");
   puth(arsp2, 8);
-  asm volatile("mov %0, %%rsp"::"m"(sp));
+//   asm volatile("mov %0, %%rsp"::"m"(sp));
   task0->sp = rsp0;
   task1->sp = arsp1;
   task2->sp = arsp2;
+    puts("\n");
+    puts("\n");
+    puth(rsp0, 8);
+    puts("\n");
+    puth(task0_cr3, 8);
+//   asm volatile(
+//       "mov %0, %%rsp\n"
+//       "mov %1, %%cr3\n"
+//       ::"m"(rsp0),
+//         "r"(task0_cr3)
+//     );
+//   while(1);
   puts("init tasks");
-  asm volatile("mov %0, %%rsp"::"m"(rsp0));
-  asm volatile("jmp *%0"::"m"(rip0));
+  asm volatile(
+      "mov %0, %%rsp\n"
+      "mov %1, %%cr3\n"
+      "jmp *%2\n"
+      ::"m"(rsp0),
+        "r"(task0_cr3),
+        "m"(rip0));
 }
-
 void schedule(unsigned long long sp) {
+//   asm volatile(
+//     "mov %[cr3], %%cr3\n"
+//     ::[cr3]"a"(kernel_cr3)
+//   );
   puts("\nschedule() called\r\n");
   puth(sp, 8);
   // unsigned long long nowsp;
@@ -156,18 +191,32 @@ void schedule(unsigned long long sp) {
   if (current_task==0) rip=rip0;
   else if (current_task==1) rip=rip1;
   else if (current_task==2) rip=rip2;
+
+  unsigned long long next_cr3;
+  if (current_task==0) next_cr3=task_cr3s[0];
+  else if (current_task==1) next_cr3=task_cr3s[1];
+  else if (current_task==2) next_cr3=task_cr3s[2];
   puts("\nnew task\n");
   puth(current_task, 8);
+  puts("\n");
+  puth(next_cr3, 8);
 
 // switch sp
   newsp = newtask->sp;
   puth(newsp, 8);
   *lapic_eoi2 = 0;
-  asm volatile("mov %0, %%rsp"::"m"(newsp));
-  // while(1);
+//   if (current_task == 0) {
+//       while(1);
+//   }
+//   asm volatile("mov %0, %%rsp"::"m"(newsp));
+//   asm volatile(
+//     "mov %[cr3], %%cr3\n"
+//     ::[cr3]"a"(next_cr3)
+//   );
 
-// hukki
   asm volatile(
+    "mov %0, %%rsp\n"
+    "mov %1, %%cr3\n"
     "pop %%rbp\n"
     "pop %%rsi\n"
     "pop %%rdi\n"
@@ -176,11 +225,14 @@ void schedule(unsigned long long sp) {
     "pop %%rbx\n"
     "pop %%rax\n"
     "iretq\n"
-  ::);
+    "jmp *%2"
+  ::"m"(newsp),
+  "r"(next_cr3),
+  "m"(rip));
   // while(1);
 
 // jump
   // *lapic_eoi2 = 0;
   // *lapic_eoi = 0;
-  asm volatile("jmp *%0"::"m"(rip));
+//   asm volatile("jmp *%0"::"m"(rip));
 }

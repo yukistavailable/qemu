@@ -7,6 +7,7 @@
 #include "pm_timer.h"
 #include "lapic_timer.h"
 #include "syscall.h"
+#include "memory.h"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter" // For l6 (kernel_param_dummy)
 void schedule(unsigned long long sp);
@@ -20,6 +21,7 @@ void start(void *SystemTable __attribute__ ((unused)), struct HardwareInfo *_har
   init_virtual_memory();
   init_frame_buffer(_hardware_info);
   init_intr();
+  init_virtual_memory();
   // To here - Put this part at the top of start() function
 
   // 8
@@ -78,6 +80,7 @@ void start(void *SystemTable __attribute__ ((unused)), struct HardwareInfo *_har
   void * schedule_address;
   asm volatile ("lea schedule(%%rip), %0" : "=r"(schedule_address));
   lapic_periodic_exec(1000, (void *) schedule_address);
+  // while(1);
   init_tasks();
   while (1);
 }

@@ -1,4 +1,4 @@
-unsigned long long text_section_top = 0x106000000;
+unsigned long long text_section_top = 0x40000000;
 
 void app3() {
   while (1) {

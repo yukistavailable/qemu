@@ -3,7 +3,8 @@
 
 // void puts(char * str);
 
-unsigned long long text_section_top = 0x104000000;
+// unsigned long long text_section_top = 0x104000000;
+unsigned long long text_section_top = 0x40000000;
 
 void app1() {
   while (1) {
