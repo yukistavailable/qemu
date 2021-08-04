@@ -8,6 +8,7 @@
 #include "lapic_timer.h"
 #include "syscall.h"
 #include "memory.h"
+#include "virtio.h"
 
 #pragma GCC diagnostic ignored "-Wunused-parameter" // For l6 (kernel_param_dummy)
 void schedule(unsigned long long sp);
@@ -77,10 +78,11 @@ void start(void *SystemTable __attribute__ ((unused)), struct HardwareInfo *_har
   // );
 
   //9-B
-  void * schedule_address;
-  asm volatile ("lea schedule(%%rip), %0" : "=r"(schedule_address));
-  lapic_periodic_exec(1000, (void *) schedule_address);
-  // while(1);
-  init_tasks();
+  // void * schedule_address;
+  // asm volatile ("lea schedule(%%rip), %0" : "=r"(schedule_address));
+  // lapic_periodic_exec(1000, (void *) schedule_address);
+  // // while(1);
+  // init_tasks();
+  find();
   while (1);
 }
